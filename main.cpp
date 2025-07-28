@@ -19,27 +19,27 @@ int main() {
 #endif    
 
     try {
-        MessageManager::getInstance().greeting();
-        MessageManager::getInstance().inputFile();
+        MessageManager::getInstance().greeting(); // Представляемся
+        MessageManager::getInstance().inputFile(); // Просим указать файл для отображения
         std::string fileName;
-        std::cin >> fileName;
-        FileManager file(fileName);
-        BMPImageManager image(file.extractData());
-        // std::cout << image.getWidth() << std::endl;
-        // std::cout << image.getHeight() << std::endl;        
-        // std::cout << image.getCoordPosition() << std::endl;
-        // std::cout << image.getBitsCount() << std::endl; 
-        // std::cout << image.calculateRowPadding() << std::endl;         
-        image.drawToConsole();    
-        MessageManager::getInstance().chooseFileToSave();
         std::cin >> fileName; 
-        file.saveBMP(fileName, image.getPixelsVector());  
+        FileManager file(fileName); // Загружаем и получаем данные из файла, закрываем файл
+        BMPImageManager image(file.extractData()); //  Перемещаем данные в сущность "менеджер для работы с картинкой"
+        
+        image.drawToConsole(); // Рисуем картинку исходную
+        
+        image.drawLine(0,0, image.getWidth(), image.getHeight()); // Добавим линию 1
+        image.drawLine(image.getWidth(), 0, 0, image.getHeight()); // Добавим линию 2
+        
+        image.drawToConsole(); // Рисуем картинку измененную
+        
+        MessageManager::getInstance().chooseFileToSave(); // Предлагаем ввести имя файла для сохранения
+        std::cin >> fileName; 
+        file.saveBMP(fileName, image.getPixelsVector());  // Сохраняем
     } catch(const std::runtime_error& e) {
         std::cout << "Oooops... Runtime error. Program will terminate. Sorry..." << std::endl;
         return 1;
     }
-
-
 
     return 0;
 }

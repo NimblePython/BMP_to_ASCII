@@ -23,6 +23,9 @@ public:
     };
 
     static MessageManager& getInstance();
+    MessageManager(const MessageManager&) = delete;
+    MessageManager& operator=(const MessageManager&) = delete;
+
     void setLanguage(Language);
     void greeting();
     void inputFile();   

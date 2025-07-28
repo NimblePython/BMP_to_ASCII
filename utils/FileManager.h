@@ -12,7 +12,6 @@ public:
     const std::vector<uint8_t>& getData() const;
     std::vector<uint8_t> extractData();
 
-    // static потому что перемещаю вектор в ImageManager (может и не надо, но кажется, что логично и оптимально)
     static void saveBMP(const std::string&, const std::vector<uint8_t>&);
 
 private:

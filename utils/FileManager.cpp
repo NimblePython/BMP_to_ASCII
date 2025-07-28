@@ -17,7 +17,7 @@ FileManager::FileManager(std::string& fileName) : fileName(fileName) {
 }
 
 FileManager::~FileManager() {
-    closeFile();
+    closeFile(); //  Лишнее, так как при выходе из области видимости файловый объект закроется сам, но пусть будет =)
 }
 
 void FileManager::getDataFromFile() {

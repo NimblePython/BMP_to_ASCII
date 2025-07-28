@@ -3,6 +3,11 @@
 #include "FileManager.h"
 #include <vector>
 
+
+// Следует поделить класс на более простой, для соблюдения принципа S (OLID), но задачи не было такой =)
+// В общем и целом, можно оптимизировать по всем направлениям SOLID
+
+// Общий класс для работы с данными изображения формата BMP: анализ совместимости, и рисование в консоли + геттеры на будущее
 class BMPImageManager {
 public:
     enum class Type {
@@ -28,32 +33,30 @@ public:
     };
 
 private:
-    std::vector<uint8_t> data;
+    std::vector<uint8_t> data; // сырой BMP с пикселями и служебными данными
 
     uint32_t width;    
     uint32_t height;    
     uint32_t bitsCount;
     uint32_t coordPosition;
-
-    Type type; // На будущее пригодится
+    uint32_t rowPadding;
 
 public:
-    explicit BMPImageManager(std::vector<uint8_t>);
-    Type validateBMP() const;
+    explicit BMPImageManager(std::vector<uint8_t>&&);
+    const std::vector<uint8_t>& getPixelsVector() const;    
+    void drawToConsole() const;
+    void drawLine(int x1, int y1, int x2, int y2);  
     uint32_t getWidth() const;
     uint32_t getHeight() const;    
     uint32_t getCoordPosition() const;
-    uint32_t getBitsCount() const;
-    
-    const std::vector<uint8_t>& getPixelsVector() const;
+    uint32_t getBitsCount() const;    
+
+private:
+    Type validateBMP() const;
 
     uint32_t getDWord(uint32_t) const;
-    uint16_t getWord(uint32_t) const;
-    void drawToConsole() const;
-
-
-    uint32_t calculateRowPadding() const;
-private:
+    uint16_t getWord(uint32_t) const;    uint32_t calculateRowPadding() const;
+    
     uint32_t extractCoordPosition() const;
 
 };

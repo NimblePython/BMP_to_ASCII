@@ -6,16 +6,12 @@
 #ifdef _WIN32
     // Windows
     #include <windows.h>
-    #include <io.h>
-    #include <conio.h>
 #else
     // macOS и прочие unix like системы
     #include <unistd.h>
-    #include <termios.h>
-    #include <sys/ioctl.h>
 #endif
 
-BMPImageManager::BMPImageManager(std::vector<uint8_t> data) : data(std::move(data)) {
+BMPImageManager::BMPImageManager(std::vector<uint8_t>&& data) : data(std::move(data)) {
     Type formatBMP = validateBMP();
 
     // Присваиваем свойствам значения исходя из формата файла
@@ -24,18 +20,18 @@ BMPImageManager::BMPImageManager(std::vector<uint8_t> data) : data(std::move(dat
         width = getWord(static_cast<size_t>(BMP_16::WIDTH_OFFSET));
         height = getWord(static_cast<size_t>(BMP_16::HEIGHT_OFFSET));
         bitsCount = getWord(static_cast<size_t>(BMP_16::BIT_COUNT_OFFSET));
-        type = Type::_16bit; // На будущее пригодится
     } else if ( formatBMP == Type::_32bit ) {
         width = getDWord(static_cast<size_t>(BMP_32::WIDTH_OFFSET)); // 4 байта
         height = getDWord(static_cast<size_t>(BMP_32::HEIGHT_OFFSET)); // 4 байта
         bitsCount = getWord(static_cast<size_t>(BMP_32::BIT_COUNT_OFFSET)); // (!) 2 байта
-        type = Type::_32bit; // На будущее пригодится
     }
-    coordPosition = extractCoordPosition(); // Одинаковая позиция для любого формата
     
     if (bitsCount != 24 && bitsCount != 32) {
-        throw std::out_of_range("This program support onle 24 or 32 color bit");        
+        throw std::out_of_range("This program support only 24 or 32 color bit");        
     } 
+
+    coordPosition = extractCoordPosition();
+    rowPadding = calculateRowPadding();
 }
 
 uint32_t BMPImageManager::getDWord(uint32_t offset) const {
@@ -100,10 +96,10 @@ BMPImageManager::Type BMPImageManager::validateBMP() const{
 }
 
 void BMPImageManager::drawToConsole() const {
-    uint32_t rowPadding = calculateRowPadding();
     uint32_t bytesPerPixel = this->bitsCount / 8;
     uint32_t actualBytesPerRow = this->width * bytesPerPixel;
-    
+    std::cout << std::endl;
+        
     for (int y = this->height-1; y >= 0; --y) {
         int rowStart = this->coordPosition + y * (actualBytesPerRow + rowPadding);
         for (uint32_t x = 0; x < this->width; ++x) {
@@ -123,9 +119,42 @@ void BMPImageManager::drawToConsole() const {
         }
         std::cout << std::endl;
     }
+    std::cout << std::endl;
 }
 
 uint32_t BMPImageManager::calculateRowPadding() const {
     uint32_t bytesPerRow = width * (bitsCount / 8);
     return (4 - (bytesPerRow % 4)) % 4;
+}
+
+void BMPImageManager::drawLine(int x1, int y1, int x2, int y2) {
+    // Пока не делаю проверок координат - 
+    // По хоршему следует сделать контроллер, который будет это проверять, а потом уже вызывать функцию/сервис
+    int bytesPerPixel = bitsCount / 8;
+    int rowSize = width * bytesPerPixel;
+    int actualRowSize = rowSize + rowPadding;
+
+    // Алгоритм Брезенхэма
+    int dx = std::abs(x2 - x1), sx = x1 < x2 ? 1 : -1;
+    int dy = -std::abs(y2 - y1), sy = y1 < y2 ? 1 : -1;
+    int err = dx + dy, e2;
+
+    while (true) {
+        // BMP хранит строки снизу вверх
+        int bmpY = height - 1 - y1;
+        int offset = coordPosition + bmpY * actualRowSize + x1 * bytesPerPixel;
+
+        if (offset + 2 < data.size() && x1 >= 0 && x1 < width && y1 >= 0 && y1 < height) {
+            // Белый цвет (BGR)
+            data[offset + 0] = 255;
+            data[offset + 1] = 255;
+            data[offset + 2] = 255;
+            if (bytesPerPixel == 4) data[offset + 3] = 0; // если есть альфа-канал
+        }
+
+        if (x1 == x2 && y1 == y2) break;
+        e2 = 2 * err;
+        if (e2 >= dy) { err += dy; x1 += sx; }
+        if (e2 <= dx) { err += dx; y1 += sy; }
+    }
 }
